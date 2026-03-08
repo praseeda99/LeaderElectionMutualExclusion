@@ -13,10 +13,14 @@ func StartCommandListener(n *Node) {
 
 	for {
 
-		fmt.Print(">> ")
+		fmt.Print(ColorCyan + ">> " + ColorReset)
 
 		cmd, _ := reader.ReadString('\n')
 		cmd = strings.TrimSpace(cmd)
+
+		if cmd == "" {
+			continue
+		}
 
 		switch cmd {
 
@@ -44,8 +48,25 @@ func StartCommandListener(n *Node) {
 		case "status":
 			PrintStatus(n)
 
+		case "help":
+			PrintHelp()
+
 		default:
-			fmt.Println("Unknown command")
+			LogWarn("Unknown command: %s. Type 'help' for a list of commands.", cmd)
 		}
 	}
+}
+
+func PrintHelp() {
+	fmt.Println(ColorBlue + "---- AVAILABLE COMMANDS ----" + ColorReset)
+	fmt.Println("  election   - Start leader election (Chang-Roberts)")
+	fmt.Println("  cs         - Request Critical Section (Ricart-Agrawala)")
+	fmt.Println("  enter      - Check if inside critical section")
+	fmt.Println("  exitcs     - Exit Critical Section")
+	fmt.Println("  replicate  - Start file replication")
+	fmt.Println("  snapshot   - Start snapshot algorithm")
+	fmt.Println("  files      - List replicated files")
+	fmt.Println("  status     - Show current node status")
+	fmt.Println("  help       - Show this menu")
+	fmt.Println(ColorBlue + "----------------------------" + ColorReset)
 }

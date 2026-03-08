@@ -49,7 +49,7 @@ func (n *Node) GetNextNeighbor() int {
 }
 
 func (n *Node) CallNextNeighbor(method string, args interface{}, reply interface{}) error {
-	
+
 	// Implementation of skip-over for failed neighbors
 	n.mu.RLock()
 	ids := []int{}
@@ -70,12 +70,12 @@ func (n *Node) CallNextNeighbor(method string, args interface{}, reply interface
 	for i := 1; i < len(ids); i++ {
 		targetIdx := (myIdx + i) % len(ids)
 		targetID := ids[targetIdx]
-		
+
 		err := n.CallPeer(targetID, method, args, reply)
 		if err == nil {
 			return nil
 		}
-		fmt.Println("Node", targetID, "is down, skipping to next neighbor...")
+		LogWarn("Node %d is down, skipping to next neighbor... (Error: %v)", targetID, err)
 	}
 
 	return fmt.Errorf("no alive neighbors found")

@@ -1,7 +1,5 @@
 package main
 
-import "fmt"
-
 type RequestMessage struct {
 	NodeID    int
 	Timestamp int
@@ -26,18 +24,18 @@ func (h *RPCHandler) RequestCS(req RequestMessage, reply *bool) error {
 			sendNow = true
 		} else {
 			n.DeferredRequests = append(n.DeferredRequests, req.NodeID)
-			fmt.Println("Node", n.ID, "deferred reply to Node", req.NodeID)
+			LogCS("Node %d deferred reply to Node %d", n.ID, req.NodeID)
 		}
 	} else {
 		// HELD — always defer
 		n.DeferredRequests = append(n.DeferredRequests, req.NodeID)
-		fmt.Println("Node", n.ID, "deferred reply to Node", req.NodeID)
+		LogCS("Node %d deferred reply to Node %d", n.ID, req.NodeID)
 	}
 
 	n.mu.Unlock()
 
 	if sendNow {
-		fmt.Println("Node", n.ID, "granted reply to Node", req.NodeID)
+		LogCS("Node %d granted reply to Node %d", n.ID, req.NodeID)
 	}
 
 	*reply = sendNow
@@ -57,7 +55,7 @@ func (h *RPCHandler) GrantCS(senderID int, reply *bool) error {
 	ch := n.csReadyCh
 	n.mu.Unlock()
 
-	fmt.Println("Node", n.ID, "received deferred grant from Node", senderID)
+	LogCS("Node %d received deferred grant from Node %d", n.ID, senderID)
 
 	if ready && ch != nil {
 		select {
@@ -80,7 +78,7 @@ func (n *Node) RequestCS() {
 	n.csReadyCh = make(chan struct{}, 1)
 	n.mu.Unlock()
 
-	fmt.Println("Node", n.ID, "requesting critical section")
+	LogCS("Node %d requesting critical section", n.ID)
 
 	needed := len(n.Peers) - 1
 
@@ -90,7 +88,7 @@ func (n *Node) RequestCS() {
 			continue
 		}
 
-		fmt.Println("Sending REQUEST to Node", id)
+		LogCS("Sending REQUEST to Node %d", id)
 
 		var reply bool
 		req := RequestMessage{NodeID: n.ID, Timestamp: n.RequestTimestamp}
@@ -99,17 +97,17 @@ func (n *Node) RequestCS() {
 
 		if err != nil {
 			// Peer is down — treat as implicit grant
-			fmt.Println("Node", id, "unreachable, counting as grant")
+			LogWarn("Node %d unreachable, counting as grant", id)
 			n.mu.Lock()
 			n.ReplyCount++
 			n.mu.Unlock()
 		} else if reply {
-			fmt.Println("Reply granted by Node", id)
+			LogSuccess("Reply granted by Node %d", id)
 			n.mu.Lock()
 			n.ReplyCount++
 			n.mu.Unlock()
 		} else {
-			fmt.Println("Reply deferred by Node", id)
+			LogWarn("Reply deferred by Node %d", id)
 		}
 	}
 
@@ -119,7 +117,7 @@ func (n *Node) RequestCS() {
 	n.mu.Unlock()
 
 	if !alreadyReady {
-		fmt.Println("Node", n.ID, "waiting for deferred replies...")
+		LogInfo("Node %d waiting for deferred replies...", n.ID)
 		<-n.csReadyCh
 	}
 
@@ -127,7 +125,7 @@ func (n *Node) RequestCS() {
 	n.State = "HELD"
 	n.mu.Unlock()
 
-	fmt.Println("Node", n.ID, "entered critical section")
+	LogSuccess("Node %d entered critical section", n.ID)
 }
 
 func (n *Node) EnterCS() {
@@ -137,9 +135,9 @@ func (n *Node) EnterCS() {
 	n.mu.RUnlock()
 
 	if state == "HELD" {
-		fmt.Println("Node", n.ID, "is already in the critical section")
+		LogInfo("Node %d is already in the critical section", n.ID)
 	} else {
-		fmt.Println("Node", n.ID, "is not in the critical section (state:", state+")")
+		LogWarn("Node %d is not in the critical section (state: %s)", n.ID, state)
 	}
 }
 
@@ -149,7 +147,7 @@ func (n *Node) ExitCS() {
 
 	if n.State != "HELD" {
 		n.mu.Unlock()
-		fmt.Println("Cannot exit critical section: node is not inside it")
+		LogWarn("Cannot exit critical section: node is not inside it")
 		return
 	}
 
@@ -161,16 +159,16 @@ func (n *Node) ExitCS() {
 
 	n.mu.Unlock()
 
-	fmt.Println("Node", n.ID, "exited critical section")
+	LogInfo("Node %d exited critical section", n.ID)
 
 	// Send queued-up grants now that we are released
 	for _, peerID := range deferred {
 		var reply bool
 		err := n.CallPeer(peerID, "RPCHandler.GrantCS", n.ID, &reply)
 		if err != nil {
-			fmt.Println("Failed to send grant to Node", peerID, ":", err)
+			LogWarn("Failed to send grant to Node %d: %v", peerID, err)
 		} else {
-			fmt.Println("Node", n.ID, "sent grant to Node", peerID)
+			LogInfo("Node %d sent grant to Node %d", n.ID, peerID)
 		}
 	}
 }

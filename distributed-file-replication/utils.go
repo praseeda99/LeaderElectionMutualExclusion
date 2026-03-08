@@ -5,13 +5,43 @@ import (
 	"strconv"
 )
 
-func IntToString(i int) string {
+// ANSI color codes for terminal
+const (
+	ColorReset   = "\033[0m"
+	ColorRed     = "\033[31m"
+	ColorGreen   = "\033[32m"
+	ColorYellow  = "\033[33m"
+	ColorBlue    = "\033[34m"
+	ColorMagenta = "\033[35m"
+	ColorCyan    = "\033[36m"
+	ColorWhite   = "\033[37m"
+)
 
+func LogInfo(format string, a ...interface{}) {
+	fmt.Printf("[INFO] "+format+"\n", a...)
+}
+
+func LogWarn(format string, a ...interface{}) {
+	fmt.Printf(ColorYellow+"[WARN] "+format+ColorReset+"\n", a...)
+}
+
+func LogElection(format string, a ...interface{}) {
+	fmt.Printf(ColorCyan+"[ELECTION] "+format+ColorReset+"\n", a...)
+}
+
+func LogCS(format string, a ...interface{}) {
+	fmt.Printf(ColorGreen+"[MUTEX] "+format+ColorReset+"\n", a...)
+}
+
+func LogSuccess(format string, a ...interface{}) {
+	fmt.Printf(ColorMagenta+"[SUCCESS] "+format+ColorReset+"\n", a...)
+}
+
+func IntToString(i int) string {
 	return strconv.Itoa(i)
 }
 
 func PrintStatus(n *Node) {
-
 	n.mu.RLock()
 	id := n.ID
 	leader := n.LeaderID
@@ -20,16 +50,15 @@ func PrintStatus(n *Node) {
 	files := n.Files
 	n.mu.RUnlock()
 
-	fmt.Println("---- NODE STATUS ----")
+	fmt.Println(ColorBlue + "---- NODE STATUS ----" + ColorReset)
 	fmt.Println("Node ID:", id)
 	fmt.Println("Leader:", leader)
 	fmt.Println("State:", state)
 	fmt.Println("Clock:", clock)
 	fmt.Println("Files:", files)
-	fmt.Println("---------------------")
+	fmt.Println(ColorBlue + "---------------------" + ColorReset)
 }
 
 func (n *Node) StartHeartbeat() {
-
-	fmt.Println("Heartbeat running for Node", n.ID)
+	LogInfo("Heartbeat running for Node %d", n.ID)
 }

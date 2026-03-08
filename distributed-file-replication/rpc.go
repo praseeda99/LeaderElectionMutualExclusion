@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net"
 	"net/rpc"
+	"time"
 )
 
 type RPCHandler struct {
@@ -33,13 +35,21 @@ func (n *Node) CallPeer(peerID int, method string, args interface{}, reply inter
 
 	addr := n.Peers[peerID]
 
-	client, err := rpc.Dial("tcp", addr)
-
+	conn, err := net.DialTimeout("tcp", addr, 1*time.Second)
 	if err != nil {
 		return err
 	}
 
+	client := rpc.NewClient(conn)
+	// Make sure to close client, but if we time out, we should still let it be garbage collected or closed.
+	// We'll close the connection to abort the in-flight request if it times out
 	defer client.Close()
 
-	return client.Call(method, args, reply)
+	call := client.Go(method, args, reply, nil)
+	select {
+	case <-call.Done:
+		return call.Error
+	case <-time.After(1 * time.Second):
+		return fmt.Errorf("rpc call timeout to %s", addr)
+	}
 }
