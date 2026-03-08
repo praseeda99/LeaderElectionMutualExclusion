@@ -1,6 +1,9 @@
 package main
 
-import "sync"
+import (
+	"sort"
+	"sync"
+)
 
 type Node struct {
 	ID   int
@@ -23,6 +26,26 @@ type Node struct {
 
 	// Files
 	Files map[string]int
+}
+
+func (n *Node) GetNextNeighbor() int {
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+
+	ids := []int{}
+	for id := range n.Peers {
+		ids = append(ids, id)
+	}
+	// Sort IDs to define ring order
+	sort.Ints(ids)
+
+	for i, id := range ids {
+		if id == n.ID {
+			nextIdx := (i + 1) % len(ids)
+			return ids[nextIdx]
+		}
+	}
+	return n.ID
 }
 
 func NewNode(id int, port int, peers map[int]string) *Node {

@@ -38,8 +38,8 @@ Once a node is running, type these into the terminal:
 
 ## 📁 System Architecture
 
--   **Leader Election**: Implemented using the Bully Algorithm.
--   **Mutual Exclusion**: Implemented using the Ricart-Agrawala algorithm (distributed lamport clocks).
+-   **Leader Election**: Implemented using the **Chang–Roberts Algorithm** (Ring-based).
+-   **Mutual Exclusion**: Implemented using the **Ricart–Agrawala Algorithm** (Distributed Lamport Timestamps).
 -   **Consensus**: Files are only committed if a majority of nodes acknowledge the write.
 -   **Storage**: Each node stores its files in the `node_storage/nodeX/` directory.
 
