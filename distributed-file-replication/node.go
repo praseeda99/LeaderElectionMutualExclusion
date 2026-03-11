@@ -67,18 +67,22 @@ func (n *Node) CallNextNeighbor(method string, args interface{}, reply interface
 		}
 	}
 
+	LogDebug("Node %d searching for next neighbor in ring (starting from index %d)...", n.ID, myIdx)
+
 	for i := 1; i < len(ids); i++ {
 		targetIdx := (myIdx + i) % len(ids)
 		targetID := ids[targetIdx]
 
+		LogComm("Node %d attempting to contact neighbor Node %d...", n.ID, targetID)
 		err := n.CallPeer(targetID, method, args, reply)
 		if err == nil {
+			LogDebug("Node %d successfully reached neighbor Node %d", n.ID, targetID)
 			return nil
 		}
 		LogWarn("Node %d is down, skipping to next neighbor... (Error: %v)", targetID, err)
 	}
 
-	return fmt.Errorf("no alive neighbors found")
+	return fmt.Errorf("no alive neighbors found in the ring")
 }
 
 func NewNode(id int, port int, peers map[int]string) *Node {

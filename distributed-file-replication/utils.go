@@ -37,6 +37,14 @@ func LogSuccess(format string, a ...interface{}) {
 	fmt.Printf(ColorMagenta+"[SUCCESS] "+format+ColorReset+"\n", a...)
 }
 
+func LogDebug(format string, a ...interface{}) {
+	fmt.Printf(ColorWhite+"[DEBUG] "+format+ColorReset+"\n", a...)
+}
+
+func LogComm(format string, a ...interface{}) {
+	fmt.Printf(ColorBlue+"[COMM] "+format+ColorReset+"\n", a...)
+}
+
 func IntToString(i int) string {
 	return strconv.Itoa(i)
 }
@@ -60,5 +68,6 @@ func PrintStatus(n *Node) {
 }
 
 func (n *Node) StartHeartbeat() {
-	LogInfo("Heartbeat running for Node %d", n.ID)
+	LogInfo("Heartbeat service started for Node %d", n.ID)
+	// We could add more periodic status logs here if desired
 }

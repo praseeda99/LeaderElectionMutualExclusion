@@ -26,14 +26,15 @@ func (h *RPCHandler) Election(candidateID int, reply *bool) error {
 
 func (n *Node) BecomeLeader() {
 	n.mu.Lock()
-	if n.LeaderID == n.ID {
-		n.mu.Unlock()
-		return
-	}
+	alreadyLeader := n.LeaderID == n.ID
 	n.LeaderID = n.ID
 	n.mu.Unlock()
 
-	LogSuccess("Node %d is now the COORDINATOR", n.ID)
+	if !alreadyLeader {
+		LogSuccess("Node %d is now the COORDINATOR", n.ID)
+	} else {
+		LogElection("Node %d re-announcing leadership to ring", n.ID)
+	}
 
 	// Inform everyone in the ring
 	var ack bool
@@ -44,11 +45,13 @@ func (h *RPCHandler) Coordinator(leaderID int, ack *bool) error {
 	n := h.node
 	*ack = true
 
-	n.mu.Lock()
-	if n.LeaderID == leaderID {
-		n.mu.Unlock()
-		return nil // Already informed
+	// If the message has returned to the leader who started it, stop propagation
+	if n.ID == leaderID {
+		LogSuccess("Leader announcement for Node %d complete", leaderID)
+		return nil
 	}
+
+	n.mu.Lock()
 	n.LeaderID = leaderID
 	n.mu.Unlock()
 
